@@ -2,7 +2,9 @@
 // ===============================
 //  CONFIGURACIÓN CON FAILOVER DB     prueba 2 del 17/11/2025 22:14
 // ===============================
-// prueba de VS 
+//vamos a ver si sirve la cosa 
+//hhahahhahaha
+
 
 // Orden de preferencia:
 // 1️⃣ Ubuntu (MariaDB)
