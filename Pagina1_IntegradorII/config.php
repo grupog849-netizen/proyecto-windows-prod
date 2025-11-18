@@ -1,7 +1,8 @@
 <?php
 // ===============================
-//  CONFIGURACIÓN CON FAILOVER DB     prueba 2 del 17/11/2025 21:40
+//  CONFIGURACIÓN CON FAILOVER DB     prueba 2 del 17/11/2025 22:14
 // ===============================
+// prueba de VS 
 
 // Orden de preferencia:
 // 1️⃣ Ubuntu (MariaDB)
