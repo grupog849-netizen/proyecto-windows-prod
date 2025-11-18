@@ -1,6 +1,6 @@
 <?php
 // ===============================
-//  CONFIGURACIÓN CON FAILOVER DB     prueba del 17/11/2025 21:09
+//  CONFIGURACIÓN CON FAILOVER DB     prueba 2 del 17/11/2025 21:40
 // ===============================
 
 // Orden de preferencia:
