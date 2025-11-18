@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizar'])) {
         }
     }
 }
-
+// despliegue de proxmox a vmware
 // Procesar DELETE
 if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
