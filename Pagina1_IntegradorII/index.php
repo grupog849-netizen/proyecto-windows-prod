@@ -6,7 +6,7 @@ $mensaje = '';
 $tipo_mensaje = '';
 $editando = false;
 $producto_edit = null;
-
+// prueba de cambio en git 
 // Procesar CREATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear'])) {
     $nombre = limpiarDato($_POST['nombre']);
