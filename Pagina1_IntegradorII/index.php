@@ -81,7 +81,7 @@ if (isset($_GET['cerrar_sesion'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRUD - Gestión de Productos</title>
+    <title>CRUD - Gestión de Pro</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>

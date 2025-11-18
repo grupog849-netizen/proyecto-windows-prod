@@ -1,28 +1,68 @@
 <?php
-// config.php - Configuración principal y control de accesos
+// ===============================
+//  CONFIGURACIÓN CON FAILOVER DB     prueba del 17/11/2025 21:09
+// ===============================
 
-// 🔧 Configuración de la base de datos
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'crud_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+// Orden de preferencia:
+// 1️⃣ Ubuntu (MariaDB)
+// 2️⃣ Windows (SQLyog)
+const DB_HOSTS = [
+  ['host' => '10.50.31.123', 'port' => 3306, 'name' => 'crud_db', 'user' => 'webuser',   'pass' => 'TuPasswordSegura!'], // Ubuntu
+  ['host' => '10.50.30.253', 'port' => 3306, 'name' => 'crud_db', 'user' => 'app_user',  'pass' => 'utn12345678*'],       // Windows / SQLJog
+];
 
-// 🌎 Zona horaria local
+const DB_CHARSET = 'utf8mb4';
+
+// Zona horaria
 date_default_timezone_set('America/Costa_Rica');
 
-// 📡 Conexión PDO
-function getConnection() {
-    try {
-        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-        $pdo = new PDO($dsn, DB_USER, DB_PASS);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        return $pdo;
-    } catch (PDOException $e) {
-        die("Error de conexión: " . $e->getMessage());
-    }
+// Verifica si un host responde al puerto MySQL antes de intentar PDO
+function portUp(string $host, int $port, float $timeout = 1.0): bool {
+  $errno = $errstr = null;
+  $conn = @fsockopen($host, $port, $errno, $errstr, $timeout);
+  if ($conn) { fclose($conn); return true; }
+  return false;
 }
+
+// Conexión PDO con failover automático
+function getConnection(): PDO {
+  $lastError = null;
+  foreach (DB_HOSTS as $cfg) {
+    $host = $cfg['host'];
+    $port = $cfg['port'];
+    $name = $cfg['name'];
+    $user = $cfg['user'];
+    $pass = $cfg['pass'];
+
+    // 1) ¿Responde el puerto?
+    if (!portUp($host, $port)) {
+      $lastError = "Puerto no accesible en $host";
+      continue;
+    }
+
+    // 2) Intentar PDO
+    $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=" . DB_CHARSET;
+    try {
+      $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT            => 3
+      ]);
+      $pdo->exec("SET time_zone = '-06:00'");
+      return $pdo; // ✅ Conexión exitosa
+    } catch (PDOException $e) {
+      $lastError = $e->getMessage();
+    }
+  }
+
+  // Si ninguno funcionó
+  throw new RuntimeException("❌ No se pudo conectar a ninguna base de datos. Último error: {$lastError}");
+}
+
+// ===============================
+//  SESIÓN + REGISTRO DE ACCESOS
+// (lo que ya tenías en el otro config.php)
+// ===============================
 
 // 🧠 Sesión
 if (session_status() === PHP_SESSION_NONE) {
@@ -35,9 +75,7 @@ $paginas_excluidas = ['login.php', 'register.php', 'logout.php'];
 
 /*
    🚦 Registro automático SOLO para usuarios “anónimos” que visitan el sitio
-   y no están en login/register/logout. (Esto crea un usuario de sesión
-   como "Usuario_xxxx" y abre un registro de acceso.)
-   ⚠️ IMPORTANTE: Insert SIN ip_address (tu tabla no la tiene).
+   y no están en login/register/logout.
 */
 if (!in_array($archivo_actual, $paginas_excluidas)) {
     if (!isset($_SESSION['usuario'])) {
@@ -63,7 +101,6 @@ if (!in_array($archivo_actual, $paginas_excluidas)) {
 
 /*
    🕐 Registrar salida SOLO cuando se llame explícitamente (logout o cierre manual).
-   ❌ Eliminado register_shutdown_function para NO cerrar en cada request.
 */
 function registrarSalida() {
     if (isset($_SESSION['registro_id'])) {
