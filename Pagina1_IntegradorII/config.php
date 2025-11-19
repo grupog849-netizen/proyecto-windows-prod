@@ -1,17 +1,17 @@
 <?php
 // ===============================
-//  CONFIGURACIÓN CON FAILOVER DB     prueba 2 del 17/11/2025 22:14
+//  CONFIGURACIÓN SOLO WINDOWS (SQLyog en 10.50.30.253)
+//  Página web en 10.50.31.153
 // ===============================
-//vamos a ver si sirve la cosa 
-//hhahahhahaha
 
-
-// Orden de preferencia:
-// 1️⃣ Ubuntu (MariaDB)
-// 2️⃣ Windows (SQLyog)
 const DB_HOSTS = [
-  ['host' => '10.50.31.123', 'port' => 3306, 'name' => 'crud_db', 'user' => 'webuser',   'pass' => 'TuPasswordSegura!'], // Ubuntu
-  ['host' => '10.50.30.253', 'port' => 3306, 'name' => 'crud_db', 'user' => 'app_user',  'pass' => 'utn12345678*'],       // Windows / SQLJog
+    [
+        'host' => '10.50.30.253',     // IP de la VM donde está XAMPP + SQLyog
+        'port' => 3306,
+        'name' => 'crud_db',          // Base de datos
+        'user' => 'app_user',         // Usuario MySQL que creaste
+        'pass' => 'utn12345678*',     // Contraseña de ese usuario
+    ],
 ];
 
 const DB_CHARSET = 'utf8mb4';
@@ -19,52 +19,60 @@ const DB_CHARSET = 'utf8mb4';
 // Zona horaria
 date_default_timezone_set('America/Costa_Rica');
 
-// Verifica si un host responde al puerto MySQL antes de intentar PDO
+// ===============================
+//  Verificar si el puerto está arriba
+// ===============================
 function portUp(string $host, int $port, float $timeout = 1.0): bool {
-  $errno = $errstr = null;
-  $conn = @fsockopen($host, $port, $errno, $errstr, $timeout);
-  if ($conn) { fclose($conn); return true; }
-  return false;
+    $errno = $errstr = null;
+    $conn = @fsockopen($host, $port, $errno, $errstr, $timeout);
+    if ($conn) {
+        fclose($conn);
+        return true;
+    }
+    return false;
 }
 
-// Conexión PDO con failover automático
+// ===============================
+//  Conexión PDO (solo Windows)
+// ===============================
 function getConnection(): PDO {
-  $lastError = null;
-  foreach (DB_HOSTS as $cfg) {
-    $host = $cfg['host'];
-    $port = $cfg['port'];
-    $name = $cfg['name'];
-    $user = $cfg['user'];
-    $pass = $cfg['pass'];
+    $lastError = null;
 
-    // 1) ¿Responde el puerto?
-    if (!portUp($host, $port)) {
-      $lastError = "Puerto no accesible en $host";
-      continue;
+    foreach (DB_HOSTS as $cfg) {
+        $host = $cfg['host'];
+        $port = $cfg['port'];
+        $name = $cfg['name'];
+        $user = $cfg['user'];
+        $pass = $cfg['pass'];
+
+        // 1) ¿Responde el puerto?
+        if (!portUp($host, $port)) {
+            $lastError = "Puerto no accesible en $host:$port";
+            continue;
+        }
+
+        // 2) Intentar conexión PDO
+        $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=" . DB_CHARSET;
+        try {
+            $pdo = new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_TIMEOUT            => 3,
+            ]);
+            // Ajuste de zona horaria a nivel de sesión
+            $pdo->exec("SET time_zone = '-06:00'");
+            return $pdo; // ✅ Conexión exitosa
+        } catch (PDOException $e) {
+            $lastError = $e->getMessage();
+        }
     }
 
-    // 2) Intentar PDO
-    $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=" . DB_CHARSET;
-    try {
-      $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_TIMEOUT            => 3
-      ]);
-      $pdo->exec("SET time_zone = '-06:00'");
-      return $pdo; // ✅ Conexión exitosa
-    } catch (PDOException $e) {
-      $lastError = $e->getMessage();
-    }
-  }
-
-  // Si ninguno funcionó
-  throw new RuntimeException("❌ No se pudo conectar a ninguna base de datos. Último error: {$lastError}");
+    // Si ninguno funcionó
+    throw new RuntimeException("❌ No se pudo conectar a la base de datos. Último error: {$lastError}");
 }
 
 // ===============================
 //  SESIÓN + REGISTRO DE ACCESOS
-// (lo que ya tenías en el otro config.php)
 // ===============================
 
 // 🧠 Sesión
@@ -73,7 +81,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Detectar en qué archivo estamos
-$archivo_actual = basename($_SERVER['PHP_SELF']);
+$archivo_actual   = basename($_SERVER['PHP_SELF']);
 $paginas_excluidas = ['login.php', 'register.php', 'logout.php'];
 
 /*
@@ -82,8 +90,8 @@ $paginas_excluidas = ['login.php', 'register.php', 'logout.php'];
 */
 if (!in_array($archivo_actual, $paginas_excluidas)) {
     if (!isset($_SESSION['usuario'])) {
-        $_SESSION['session_id'] = session_id();
-        $_SESSION['usuario'] = 'Usuario_' . substr(session_id(), 0, 8);
+        $_SESSION['session_id']        = session_id();
+        $_SESSION['usuario']           = 'Usuario_' . substr(session_id(), 0, 8);
         $_SESSION['ingreso_timestamp'] = time();
 
         try {
@@ -96,7 +104,8 @@ if (!in_array($archivo_actual, $paginas_excluidas)) {
                 $_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido'
             ]);
             $_SESSION['registro_id'] = (int)$pdo->lastInsertId();
-        } catch (PDOException $e) {
+        } catch (Throwable $e) {
+            // No botar la página si falla DB
             error_log("Error registrando acceso: " . $e->getMessage());
         }
     }
@@ -116,7 +125,7 @@ function registrarSalida() {
                     WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$duracion, (int)$_SESSION['registro_id']]);
-        } catch (PDOException $e) {
+        } catch (Throwable $e) {
             error_log("Error al registrar salida: " . $e->getMessage());
         }
     }
