@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mensaje = '❌ ' . $res['message'];
     }
 }
+//prueba a las: 4:16
 ?>
 <!doctype html>
 <html lang="es">
