@@ -8,7 +8,7 @@ date_default_timezone_set('America/Costa_Rica');
 // Obtener registros recientes
 $registros = obtenerRegistrosAcceso(100);
 
-// Cerrar sesión manualmente
+// Cerrar sesión manualmente PRUEBAAAAAAA
 if (isset($_GET['cerrar_sesion'])) {
     registrarSalida();
     session_destroy();
