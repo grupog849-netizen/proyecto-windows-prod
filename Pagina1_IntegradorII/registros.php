@@ -14,7 +14,7 @@ if (isset($_GET['cerrar_sesion'])) {
     session_destroy();
     header("Location: index.php");
     exit; //VAMOS A VER X2
-// JBXAKBLABCLSB
+// JBXAKBLABCLSB JJJJJJJ
 }
 ?>
 <!DOCTYPE html>
