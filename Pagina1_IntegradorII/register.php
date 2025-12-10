@@ -2,7 +2,7 @@
 require_once 'config.php';
 require_once 'functions.php';
 
-// Si ya está logueado, redirigir
+// Si ya está logueado, redirigir prueba del depliegue en proxmox 12:22
 if (isset($_SESSION['usuario'])) {
     header('Location: index.php');
     exit;
