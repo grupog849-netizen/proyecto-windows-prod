@@ -13,8 +13,8 @@ if (isset($_GET['cerrar_sesion'])) {
     registrarSalida();
     session_destroy();
     header("Location: index.php");
-    exit; //VAMOS A VER SI SIRVE 
-    
+    exit; //VAMOS A VER X2
+
 }
 ?>
 <!DOCTYPE html>
