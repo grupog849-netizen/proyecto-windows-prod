@@ -8,6 +8,7 @@ $editando = false;
 $producto_edit = null;
 // prueba de cambio en git 
 // Procesar CREATE
+//Q¡PRUEBA 15   cddvsdf
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear'])) {
     $nombre = limpiarDato($_POST['nombre']);
     $descripcion = limpiarDato($_POST['descripcion']);
