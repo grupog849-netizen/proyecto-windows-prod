@@ -8,6 +8,7 @@ if (isset($_SESSION['usuario'])) {
     exit;
 }
 // otra prueba
+// PR
 $mensaje = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /* 🎨 Estilo visual moderno */
 body {
   font-family: "Poppins", sans-serif;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #ea66cdff, #764ba2);
   height: 100vh;
   margin: 0;
   display: flex;
